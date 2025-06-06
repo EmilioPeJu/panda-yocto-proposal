@@ -88,6 +88,15 @@ The selection of the flavor can be automated in the server start script based on
 information coming from the I2C bus. An alternative way to specify the flavor is
 by setting a variable in the `config.txt`.
 
-## Notes
-- If while the init script tries to create `state.ext4` it runs out of space, it
-  could be interesting repartitioning to fully use the SD card if it helps.
+### How do we upgrade an old panda?
+- Offline upgrade: we just repartition the SD card to use all the space and copy
+the 5 required files.
+- Live upgrade: we replace the initramfs in /boot with the new one and copy the
+  5 required files to /opt/, then reboot, the init script in initramfs
+  if it doesn't have all the required files, will try to mount /opt, copy the
+  files to RAM, repartition to use the full SD card in one fat32 partition,
+  then copy the files back.
+  For convenience to allow upgrading from the web interface, we package the 5
+  required files and a service script in a zpkg (this could be our default
+  release format to support this upgrade process always), the service script
+  will do the steps described earlier.
