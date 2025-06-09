@@ -1,4 +1,4 @@
-FROM rockylinux:9
+FROM docker.io/rockylinux:9
 RUN yum -y upgrade && yum -y install \
     automake \
     bzip2 \
