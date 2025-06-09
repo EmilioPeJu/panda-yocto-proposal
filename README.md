@@ -26,7 +26,10 @@ The images are:
 - `initramfs.cpio.tar`: it contains the needed packages to mount and move to the
   definitive rootfs.
 - `packages.ext4`: definitive rootfs, it contains system packages and panda
-  packages including all the flavors of FMCs.
+  packages including all the flavors of FMCs. Even though it is called
+  `packages.ext4` for convenience, this is actually
+  `petalinux-image-minimal.ext4` with the panda packages added (and possibly
+  some extra system packages).
 - `state.ext4`: Initially it doesn't exist and it is the created (empty) by the
 init script.
 
