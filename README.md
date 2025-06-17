@@ -39,28 +39,34 @@ parts are consistent with each other.
 ## Initramfs init script
 The init script mounts the images:
 ```bash
-mkdir /panda /state
-mount -t ext4 -o ro /boot/packages.ext4 /packages
-mount -t ext4 -o rw /boot/state.ext4 /state
+mount -t tmpfs tmpfs /tmp
+mkdir /tmp/packages /tmp/state
+mount -t ext4 /boot/packages.ext4 /tmp/packages
+mount -t ext4 /boot/state.ext4 /tmp/state
 ```
 
 Then mount an overlayfs using packages as lower layers(immutable) and state as
 upper layer:
 ```bash
-mkdir /merge /work
-mount -t overlayfs -o lowerdir=/packages,upperdir=/state,workdir=/work overlayfs /merge
+mkdir -p /rootfs /tmp/state/upper /tmp/state/work
+mount -t overlay -o lowerdir=/tmp/packages/,upperdir=/tmp/state/upper/,workdir=/tmp/state/work/ overlay /rootfs/
 ```
 
-Finally, use that as root and exec init system(possibly systemd?)
+Finally, switch root and exec init system(possibly systemd?)
 ```bash
-# the overlayfs mounted directory becomes the root
-mount -n --move /merge /
-exec /sbin/init
+mkdir -p /rootfs/boot /rootfs/proc /rootfs/sys /rootfs/dev /rootfs/tmp
+mount --move /boot /rootfs/boot
+mount --move /proc /rootfs/proc
+mount --move /sys /rootfs/sys
+mount --move /dev /rootfs/dev
+mount --move /tmp /rootfs/tmp
+exec switch_root -c /dev/console /rootfs/ /sbin/init
 ```
-
 The result is a system that will merge the content of packages and state but any
 write will be changing only `state.ext4` (e.g. when installing packages), any
 messed up system can be recovered by deleting `state.ext4`.
+
+A proof-of-concept init script can be found [here](/init).
 
 ## FAQ
 ### How do we test a part of software in development?
@@ -103,3 +109,10 @@ the 5 required files.
   required files and a service script in a zpkg (this could be our default
   release format to support this upgrade process always), the service script
   will do the steps described earlier.
+
+### Error `operation not supported error, dev loop1, sector 1608 op 0x9:(WRITE_ZEROES) flags 0x800 phys_seg 0 prio class 2`
+This error appears when the state.ext4 image is created, apparently some
+initialization does the WRITE_ZEROES operation which the underlying vfat
+filesystem doesn't support, the system continues running ... so, it probably did
+the operation in the slow way and then this message doesn't appear anymore. More
+ investigation is needed to confirm this is fine.
