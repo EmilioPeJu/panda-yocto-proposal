@@ -40,6 +40,7 @@ RUN yum -y upgrade && yum -y install \
     socat \
     sudo \
     tar \
+    tmux \
     unzip \
     wget \
     which \

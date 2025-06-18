@@ -31,8 +31,8 @@ o # create new partition table
 n # create new partition
 p # primary
 1 # number 1
-  # from ssd start
-  # to ssd end
+  # from sd card start
+  # to sd card end
 t # type
 1 # of partition 1
 c # fat32
@@ -67,6 +67,7 @@ mount -t vfat /dev/mmcblk0p1 /boot  ||
 mkdir -p /tmp/packages /tmp/state 
 mount -t ext4 /boot/packages.ext4 /tmp/packages/ ||
     panic 'Unable to mount packages'
+mount -o remount,ro /tmp/packages/
 mount -t ext4 /boot/state.ext4 /tmp/state ||
     panic 'Unable to mount state'
 mkdir -p /tmp/state/upper /tmp/state/work
