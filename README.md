@@ -6,6 +6,19 @@
 - Req 3: Having a simple test process for development.
 - Req 4: Supporting 3rd party packages.
 - Req 5: The versions between all the packages should always be consistent.
+- Req 6: Last logs must be saved after graceful reboot.
+- Req 7: The first partition should contain a folder called state/ to contain
+  the designs and panda.state.
+- Req 8: Keep `/boot/config.txt`.
+- Req 9: Keep `/boot/authorized_keys`.
+- Req 10: Support Zeroconf networking.
+- Req 11: Keep `/qspi` for MAC address and SSH host keys.
+- Req 12: Keep LED daemon.
+- Req 13: Multiple FPGA flavors can be available. The FPGA loader will first
+  check if there is only a flavor (in which case load it unconditionally), else
+  will look for overrides in the boot.txt parameter FPGA_FIRMWARE, if that
+  doesn't exist or it is set to auto, it will auto detect using I2C, if that
+  doesn't work, it will default to the no-fmc flavor.
 - TODO: Maximum size requirement?
 
 # Proposal
@@ -20,6 +33,7 @@
   outside.
 - Panda-yocto could have the option to get the FPGA part either from a release
   or from a directory pointed by the user.
+- `state/` folder contains the designs and panda.state.
 
 ## Images
 The images are:
@@ -30,26 +44,34 @@ The images are:
   `packages.ext4` for convenience, this is actually
   `petalinux-image-minimal.ext4` with the panda packages added (and possibly
   some extra system packages).
-- `state.ext4`: Initially it doesn't exist and it is the created (empty) by the
-init script.
+- `changes.ext4`: Initially it doesn't exist and it is the created (empty) by
+  the init script.
 
 Having all the packages in `packages.ext4` is better to ensure that all the
 parts are consistent with each other.
 
-## Initramfs init script
+This structure supports requirements Req 1, Req 2, Req 3 and Req 4.
+
+## Implementation notes
+- Journald is configured to store persistently with long flush period (Req 6).
+- Package manager is opkg (Req 4). 
+- Programming the FPGA will be a different service to starting the server.
+- root account has been enabled and the usual password configured.
+
+### Initramfs init script
 The init script mounts the images:
 ```bash
 mount -t tmpfs tmpfs /tmp
-mkdir /tmp/packages /tmp/state
+mkdir /tmp/packages /tmp/changes
 mount -t ext4 /boot/packages.ext4 /tmp/packages
-mount -t ext4 /boot/state.ext4 /tmp/state
+mount -t ext4 /boot/changes.ext4 /tmp/changes
 ```
 
-Then mount an overlayfs using packages as lower layers(immutable) and state as
+Then mount an overlayfs using packages as lower layers(immutable) and changes as
 upper layer:
 ```bash
-mkdir -p /rootfs /tmp/state/upper /tmp/state/work
-mount -t overlay -o lowerdir=/tmp/packages/,upperdir=/tmp/state/upper/,workdir=/tmp/state/work/ overlay /rootfs/
+mkdir -p /rootfs /tmp/changes/upper /tmp/changes/work
+mount -t overlay -o lowerdir=/tmp/packages/,upperdir=/tmp/changes/upper/,workdir=/tmp/changes/work/ overlay /rootfs/
 ```
 
 Finally, switch root and exec init system(possibly systemd?)
@@ -63,8 +85,8 @@ mount --move /tmp /rootfs/tmp
 exec switch_root -c /dev/console /rootfs/ /sbin/init
 ```
 The result is a system that will merge the content of packages and state but any
-write will be changing only `state.ext4` (e.g. when installing packages), any
-messed up system can be recovered by deleting `state.ext4`.
+write will be changing only `changes.ext4` (e.g. when installing packages), any
+messed up system can be recovered by deleting `changes.ext4`.
 
 A proof-of-concept init script can be found [here](/init).
 

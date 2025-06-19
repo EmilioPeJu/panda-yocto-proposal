@@ -46,10 +46,12 @@ EOF
         panic 'Failed to resize sdcard'
 }
 
-create_state()
+create_changes_image()
 {
-    dd if=/dev/zero of=/boot/state.ext4 count=128 bs=1M
-    mkfs.ext4 -F /boot/state.ext4
+    dd if=/dev/zero of=/boot/changes.ext4 count=128 bs=1M
+    # the options are needed to prevent an error at mount time because of
+    # unsupported WRITE_ZEROES operation by underlying fat32 system
+    mkfs.ext4 -E lazy_itable_init=0,lazy_journal_init=0 -F /boot/changes.ext4
 }
 
 while [ ! -e /dev/mmcblk0p1 ]; do
@@ -63,20 +65,22 @@ mount -t vfat /dev/mmcblk0p1 /boot  ||
 
 [ -b /dev/mmcblk0p3 ] && resize_sdcard
 [ -e /boot/packages.ext4 ] || panic 'Rootfs not found'
-[ ! -e /boot/state.ext4 ] && create_state
-mkdir -p /tmp/packages /tmp/state 
+[ ! -e /boot/changes.ext4 ] && create_changes_image
+mkdir -p /tmp/packages /tmp/changes
 mount -t ext4 /boot/packages.ext4 /tmp/packages/ ||
     panic 'Unable to mount packages'
 mount -o remount,ro /tmp/packages/
-mount -t ext4 /boot/state.ext4 /tmp/state ||
-    panic 'Unable to mount state'
-mkdir -p /tmp/state/upper /tmp/state/work
-mount -t overlay -o lowerdir=/tmp/packages/,upperdir=/tmp/state/upper/,workdir=/tmp/state/work/ overlay /rootfs ||
+mount -t ext4 /boot/changes.ext4 /tmp/changes ||
+    panic 'Unable to mount changes'
+mkdir -p /tmp/changes/upper /tmp/changes/work
+mount -t overlay -o lowerdir=/tmp/packages/,upperdir=/tmp/changes/upper/,workdir=/tmp/changes/work/ overlay /rootfs ||
     panic 'Unable to mount rootfs'
 mkdir -p /rootfs/boot /rootfs/proc /rootfs/sys /rootfs/dev /rootfs/tmp
 mount --move /boot /rootfs/boot
 mount --move /proc /rootfs/proc
 mount --move /sys /rootfs/sys
 mount --move /dev /rootfs/dev
+# this also move the mounts underneath /tmp so that it can be accessed from the
+# new root
 mount --move /tmp /rootfs/tmp
 exec switch_root -c /dev/console /rootfs/ /sbin/init
