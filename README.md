@@ -116,3 +116,7 @@ initialization does the WRITE_ZEROES operation which the underlying vfat
 filesystem doesn't support, the system continues running ... so, it probably did
 the operation in the slow way and then this message doesn't appear anymore. More
  investigation is needed to confirm this is fine.
+ 
+ A workaround was found, mkfs.ext4 with options `lazy_journal_init=0` and
+ `lazy_itable_init=0`. This initialization is the only thing that seems to need
+ the `WRITE_ZEROES` operation.
