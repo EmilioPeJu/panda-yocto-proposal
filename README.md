@@ -1,20 +1,21 @@
 # Panda Yocto Structure Proposal
 # Requirements
-- Req 1: Having a simple upgrade process (e.g. copying a few files to the SD
+- [x] Req 1: Having a simple upgrade process (e.g. copying a few files to the SD
   card).
-- Req 2: Having a persistent state for supporting tests, designs and logging.
-- Req 3: Having a simple test process for development.
-- Req 4: Supporting 3rd party packages.
-- Req 5: The versions between all the packages should always be consistent.
-- Req 6: Last logs must be saved after graceful reboot.
-- Req 7: The first partition should contain a folder called state/ to contain
+- [x] Req 2: Having a persistent state for supporting tests, designs and logging.
+- [x] Req 3: Having a simple test process for development.
+- [x] Req 4: Supporting 3rd party packages.
+- [x] Req 5: The versions between all the packages should always be consistent.
+- [x] Req 6: Last logs must be saved after graceful reboot.
+- [x] Req 7: The first partition should contain a folder called state/ to contain
   the designs and panda.state.
-- Req 8: Keep `/boot/config.txt`.
-- Req 9: Keep `/boot/authorized_keys`.
-- Req 10: Support Zeroconf networking.
-- Req 11: Keep `/qspi` for MAC address and SSH host keys.
-- Req 12: Keep LED daemon.
-- Req 13: Multiple FPGA flavors can be available. The FPGA loader will first
+- [x] Req 8: Keep `/boot/config.txt`.
+- [x] Req 9: Keep `/boot/authorized_keys`.
+- [x] Req 10: Support Zeroconf networking.
+- [x] Req 11: Keep `/qspi` for MAC address and SSH host keys.
+  - it was renamed to `/persistent` to make it general for all targets.
+- [x] Req 12: Keep LED daemon.
+- [x] Req 13: Multiple FPGA flavors can be available. The FPGA loader will first
   check if there is only a flavor (in which case load it unconditionally), else
   will look for overrides in the boot.txt parameter FPGA_FIRMWARE, if that
   doesn't exist or it is set to auto, it will auto detect using I2C, if that
@@ -39,15 +40,22 @@
 The images are:
 - `initramfs.cpio.tar`: it contains the needed packages to mount and move to the
   definitive rootfs.
-- `packages.ext4`: definitive rootfs, it contains system packages and panda
+- `packages.squashfs`: definitive rootfs, it contains system packages and panda
   packages including all the flavors of FMCs. Even though it is called
-  `packages.ext4` for convenience, this is actually
-  `petalinux-image-minimal.ext4` with the panda packages added (and possibly
-  some extra system packages).
+  `packages.squashfs` for convenience, this is actually
+  `petalinux-image-minimal.squashfs` with the panda packages added (and possibly
+  some extra system packages). The filesystem was decided to be squashfs for
+  many reasons.
+    - Size is less than half the original size, therefore now it fits in the
+      fat32 partition of an old panda SD card, simplifying upgrade.
+    - The blocks are integrity checked and corruption can be detected.
+    - The file can be hashed to check for corruption, while in other filesystem
+      like ext4, the hash changes with normal use, given that it writes metadata
+      even mounting read-only.
 - `changes.ext4`: Initially it doesn't exist and it is the created (empty) by
   the init script.
 
-Having all the packages in `packages.ext4` is better to ensure that all the
+Having all the packages in `packages.squashfs` is better to ensure that all the
 parts are consistent with each other.
 
 This structure supports requirements Req 1, Req 2, Req 3 and Req 4.
@@ -57,38 +65,21 @@ This structure supports requirements Req 1, Req 2, Req 3 and Req 4.
 - Package manager is opkg (Req 4). 
 - Programming the FPGA will be a different service to starting the server.
 - root account has been enabled and the usual password configured.
+- I couldn't find any hash in ipk metadata, maybe we should consider other
+  package format?
+- `/boot` was removed from the image, the init script will mount that location
+  anyways.
 
 ### Initramfs init script
-The init script mounts the images:
-```bash
-mount -t tmpfs tmpfs /tmp
-mkdir /tmp/packages /tmp/changes
-mount -t ext4 /boot/packages.ext4 /tmp/packages
-mount -t ext4 /boot/changes.ext4 /tmp/changes
-```
+The init script mounts the images, then mount an overlayfs using packages as
+lower layers(immutable) and changes as upper layer, finally, switch root and
+exec init system.
 
-Then mount an overlayfs using packages as lower layers(immutable) and changes as
-upper layer:
-```bash
-mkdir -p /rootfs /tmp/changes/upper /tmp/changes/work
-mount -t overlay -o lowerdir=/tmp/packages/,upperdir=/tmp/changes/upper/,workdir=/tmp/changes/work/ overlay /rootfs/
-```
-
-Finally, switch root and exec init system(possibly systemd?)
-```bash
-mkdir -p /rootfs/boot /rootfs/proc /rootfs/sys /rootfs/dev /rootfs/tmp
-mount --move /boot /rootfs/boot
-mount --move /proc /rootfs/proc
-mount --move /sys /rootfs/sys
-mount --move /dev /rootfs/dev
-mount --move /tmp /rootfs/tmp
-exec switch_root -c /dev/console /rootfs/ /sbin/init
-```
 The result is a system that will merge the content of packages and state but any
 write will be changing only `changes.ext4` (e.g. when installing packages), any
 messed up system can be recovered by deleting `changes.ext4`.
 
-A proof-of-concept init script can be found [here](/init).
+The full init script can be seen in the meta-panda layer [here](https://github.com/PandABlocks/meta-panda/blob/rel-v2023.2/recipes-core/initrdscripts/files/pinit).
 
 ## FAQ
 ### How do we test a part of software in development?
@@ -142,3 +133,8 @@ the operation in the slow way and then this message doesn't appear anymore. More
  A workaround was found, mkfs.ext4 with options `lazy_journal_init=0` and
  `lazy_itable_init=0`. This initialization is the only thing that seems to need
  the `WRITE_ZEROES` operation.
+
+ Apparently, this happens when `fallocate` is called with flag
+ `FALLOC_FL_ZERO_RANGE` which is not supported by the underlying loop device.
+ Whether this is a problem or not, depends if the caller falls back to zeroing
+ the slow way.
