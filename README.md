@@ -20,7 +20,10 @@
   will look for overrides in the boot.txt parameter FPGA_FIRMWARE, if that
   doesn't exist or it is set to auto, it will auto detect using I2C, if that
   doesn't work, it will default to the no-fmc flavor.
-- TODO: Maximum size requirement?
+- [ ] Req 14: Webadmin should be present and use ipk instead
+- [ ] Req 15: The FPGA repo should be able to produce ipk packages
+- [ ] Req 16: Network configuration should be overriden by USB drive with file
+  `panda-config.txt`. This implies that the USB drive should be auto-mounted.
 
 # Proposal
 ![](./panda-yocto.drawio.png)
@@ -40,9 +43,9 @@
 The images are:
 - `initramfs.cpio.tar`: it contains the needed packages to mount and move to the
   definitive rootfs.
-- `packages.squashfs`: definitive rootfs, it contains system packages and panda
+- `rootfs.squashfs`: definitive rootfs, it contains system packages and panda
   packages including all the flavors of FMCs. Even though it is called
-  `packages.squashfs` for convenience, this is actually
+  `rootfs.squashfs` for convenience, this is actually
   `petalinux-image-minimal.squashfs` with the panda packages added (and possibly
   some extra system packages). The filesystem was decided to be squashfs for
   many reasons.
@@ -55,7 +58,7 @@ The images are:
 - `changes.ext4`: Initially it doesn't exist and it is the created (empty) by
   the init script.
 
-Having all the packages in `packages.squashfs` is better to ensure that all the
+Having all the packages in `rootfs.squashfs` is better to ensure that all the
 parts are consistent with each other.
 
 This structure supports requirements Req 1, Req 2, Req 3 and Req 4.
@@ -69,6 +72,8 @@ This structure supports requirements Req 1, Req 2, Req 3 and Req 4.
   package format?
 - `/boot` was removed from the image, the init script will mount that location
   anyways.
+- webadmin could get the panda related output from `journalctl -u panda-*` and
+  system logs from `journalctl -k`.
 
 ### Initramfs init script
 The init script mounts the images, then mount an overlayfs using packages as
