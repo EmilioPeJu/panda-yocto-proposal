@@ -78,12 +78,14 @@ This structure supports requirements Req 1, Req 2, Req 3 and Req 4.
 - Package manager is opkg (Req 4). 
 - Programming the FPGA will be a different service to starting the server.
 - root account has been enabled and the usual password configured.
-- I couldn't find any hash in ipk metadata, maybe we should consider other
-  package format?
 - `/boot` was removed from the image, the init script will mount that location
   anyways.
 - webadmin could get the panda related output from `journalctl -u panda-*` and
   system logs from `journalctl -k`.
+- The SDK has been installed under
+  `/dls_sw/work/targetOS/petalinux-v2023.2-zynq-toolchain`. The development
+  environment can be loaded by running:
+  `. /dls_sw/work/targetOS/petalinux-v2023.2-zynq-toolchain/environment-setup-cortexa9t2hf-neon-xilinx-linux-gnueabi`
 
 ### Initramfs init script
 The init script mounts the images, then mount an overlayfs using packages as
