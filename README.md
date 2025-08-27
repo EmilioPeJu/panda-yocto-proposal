@@ -1,4 +1,10 @@
 # Panda Yocto Structure Proposal
+- Main repo: [meta-panda](https://github.com/PandABlocks/meta-panda)
+- [PR PandABlocks-server#64](https://github.com/PandABlocks/PandABlocks-server/pull/64)
+- [PR PandABlocks-server#66](https://github.com/PandABlocks/PandABlocks-server/pull/66)
+- [PR PandABlocks-FPGA#244](https://github.com/PandABlocks/PandABlocks-FPGA/pull/244)
+- [PR PandABlocks-slowFPGA#4](https://github.com/PandABlocks/PandABlocks-slowFPGA/pull/4)
+
 # Requirements
 - [x] Req 1: Having a simple upgrade process (e.g. copying a few files to the SD
   card).
@@ -17,13 +23,15 @@
 - [x] Req 12: Keep LED daemon.
 - [x] Req 13: Multiple FPGA flavors can be available. The FPGA loader will first
   check if there is only a flavor (in which case load it unconditionally), else
-  will look for overrides in the boot.txt parameter FPGA_FIRMWARE, if that
+  will look for overrides in the boot.txt parameter FPGA\_FIRMWARE, if that
   doesn't exist or it is set to auto, it will auto detect using I2C, if that
   doesn't work, it will default to the no-fmc flavor.
-- [ ] Req 14: Webadmin should be present and use ipk instead
-- [ ] Req 15: The FPGA repo should be able to produce ipk packages
-- [ ] Req 16: Network configuration should be overriden by USB drive with file
+- [x] Req 14: Webadmin should be present and use ipk instead
+- [x] Req 15: The FPGA repo should produce its associated ipk packages
+  - PR `PandABlocks/PandABlocks-FPGA#244`
+- [x] Req 16: Network configuration should be overriden by USB drive with file
   `panda-config.txt`. This implies that the USB drive should be auto-mounted.
+  - Not fully tested yet.
 
 # Proposal
 ![](./panda-yocto.drawio.png)
@@ -38,6 +46,8 @@
 - Panda-yocto could have the option to get the FPGA part either from a release
   or from a directory pointed by the user.
 - `state/` folder contains the designs and panda.state.
+- A SDK can be generated from yocto so that developers can use the same
+  toolchain without having to deal with yocto.
 
 ## Images
 The images are:
@@ -130,7 +140,7 @@ the 5 required files.
 
 ### Error `operation not supported error, dev loop1, sector 1608 op 0x9:(WRITE_ZEROES) flags 0x800 phys_seg 0 prio class 2`
 This error appears when the state.ext4 image is created, apparently some
-initialization does the WRITE_ZEROES operation which the underlying vfat
+initialization does the WRITE\_ZEROES operation which the underlying vfat
 filesystem doesn't support, the system continues running ... so, it probably did
 the operation in the slow way and then this message doesn't appear anymore. More
  investigation is needed to confirm this is fine.
