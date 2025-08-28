@@ -1,9 +1,20 @@
 # Panda Yocto Structure Proposal
+DONE!
+- [Test release](https://github.com/PandABlocks/meta-panda/releases/download/4.0alpha1/boot@pandabox-4.0alpha1.zip)
 - Main repo: [meta-panda](https://github.com/PandABlocks/meta-panda)
 - [PR PandABlocks-server#64](https://github.com/PandABlocks/PandABlocks-server/pull/64)
 - [PR PandABlocks-server#66](https://github.com/PandABlocks/PandABlocks-server/pull/66)
 - [PR PandABlocks-FPGA#244](https://github.com/PandABlocks/PandABlocks-FPGA/pull/244)
 - [PR PandABlocks-slowFPGA#4](https://github.com/PandABlocks/PandABlocks-slowFPGA/pull/4)
+
+Possible improvements:
+- Automatic deployment of everything inside the CI
+- Packaging/building of webcontrol
+- USB automount feature?
+- Should we use the SDK in panda server CI?
+- Some warning messages
+- Cleaner docker image?
+- Using kas to simplify build workflow
 
 # Requirements
 - [x] Req 1: Having a simple upgrade process (e.g. copying a few files to the SD
