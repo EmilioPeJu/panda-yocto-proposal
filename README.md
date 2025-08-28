@@ -155,3 +155,26 @@ the operation in the slow way and then this message doesn't appear anymore. More
  `FALLOC_FL_ZERO_RANGE` which is not supported by the underlying loop device.
  Whether this is a problem or not, depends if the caller falls back to zeroing
  the slow way.
+
+## How to build the panda server using the yocto SDK?
+- Load the SDK environment
+```bash
+. /dls_sw/work/targetOS/petalinux-v2023.2-zynq-toolchain/environment-setup-cortexa9t2hf-neon-xilinx-linux-gnueabi
+```
+- Modify your CONFIG to have the following variables set
+```makefile
+CROSS_COMPILE =
+# needed if you want to build the driver too
+KERNER_DIR = /dls_sw/work/targetOS/petalinux-v2023.2-zynq-toolchain/sysroots/cortexa9t2hf-neon-xilinx-linux-gnueabi/lib/modules/6.1.60-xilinx-v2023.2/build
+```
+- Make
+```bash
+make clean # needed if there was already a build
+make server
+# build the driver
+make driver CROSS_COMPILE=arm-xilinx-linux-gnueabi-
+```
+
+Note: the kernel sources might be missing some scripts, so fix that,
+run `make scripts && make prepare` inside the kernel sources directory after
+having loaded the SDK environment
