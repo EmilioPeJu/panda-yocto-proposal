@@ -13,8 +13,8 @@ Possible improvements:
 - USB automount feature?
 - Should we use the SDK in panda server CI?
 - Some warning messages
-- Cleaner docker image?
-- Using kas to simplify build workflow
+- [x] Cleaner docker image? the one used by kas
+- [x] Using kas to simplify build workflow (kas-container to be precise)
 
 # Requirements
 - [x] Req 1: Having a simple upgrade process (e.g. copying a few files to the SD
@@ -97,6 +97,8 @@ This structure supports requirements Req 1, Req 2, Req 3 and Req 4.
   `/dls_sw/work/targetOS/petalinux-v2023.2-zynq-toolchain`. The development
   environment can be loaded by running:
   `. /dls_sw/work/targetOS/petalinux-v2023.2-zynq-toolchain/environment-setup-cortexa9t2hf-neon-xilinx-linux-gnueabi`
+- The docker files were removed from this repo, my recommendation now is using
+  kas because it simplifies the build significantly.
 
 ### Initramfs init script
 The init script mounts the images, then mount an overlayfs using packages as
