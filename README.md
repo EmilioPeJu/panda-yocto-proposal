@@ -8,13 +8,12 @@ DONE!
 - [PR PandABlocks-slowFPGA#4](https://github.com/PandABlocks/PandABlocks-slowFPGA/pull/4)
 
 Possible improvements:
-- Automatic deployment of everything inside the CI
-- Packaging/building of webcontrol
-- USB automount feature?
-- Should we use the SDK in panda server CI?
-- Some warning messages
-- [x] Cleaner docker image? the one used by kas
-- [x] Using kas to simplify build workflow (kas-container to be precise)
+- [ ] Automatic deployment of everything inside the CI.
+- [x] Pull webcontrol to webadmin (inside meta-panda).
+- Fix some warning messages (WRITE\_ZEROES related).
+- [x] Cleaner docker image? the one used by kas.
+- [x] Using kas to simplify build workflow (kas-container to be precise).
+- [ ] Build the SDK in CI and publish a container to support server testing 
 
 # Requirements
 - [x] Req 1: Having a simple upgrade process (e.g. copying a few files to the SD
@@ -30,11 +29,10 @@ Possible improvements:
 - [x] Req 9: Keep `/boot/authorized_keys`.
 - [x] Req 10: Support Zeroconf networking.
 - [x] Req 11: Keep `/qspi` for MAC address and SSH host keys.
-  - it was renamed to `/persistent` to make it general for all targets.
 - [x] Req 12: Keep LED daemon.
 - [x] Req 13: Multiple FPGA flavors can be available. The FPGA loader will first
   check if there is only a flavor (in which case load it unconditionally), else
-  will look for overrides in the boot.txt parameter FPGA\_FIRMWARE, if that
+  will look for overrides in the boot.txt parameter APP, if that
   doesn't exist or it is set to auto, it will auto detect using I2C, if that
   doesn't work, it will default to the no-fmc flavor.
 - [x] Req 14: Webadmin should be present and use ipk instead
@@ -42,7 +40,11 @@ Possible improvements:
   - PR `PandABlocks/PandABlocks-FPGA#244`
 - [x] Req 16: Network configuration should be overriden by USB drive with file
   `panda-config.txt`. This implies that the USB drive should be auto-mounted.
-  - Not fully tested yet.
+- [x] Req 17: Webcontrol should be joined with web-admin
+- [x] Req 18: Web-admin should provide documentation for rootfs(linux system)
+  and for webcontrol
+- [x] Req 19: Web-admin should be activated by socket to save resources
+- [x] Req 20: First boot on pandabox should ask for a MAC address
 
 # Proposal
 ![](./panda-yocto.drawio.png)
@@ -86,7 +88,7 @@ This structure supports requirements Req 1, Req 2, Req 3 and Req 4.
 
 ## Implementation notes
 - Journald is configured to store persistently with long flush period (Req 6).
-- Package manager is opkg (Req 4). 
+- Package manager is opkg (Req 4).
 - Programming the FPGA will be a different service to starting the server.
 - root account has been enabled and the usual password configured.
 - `/boot` was removed from the image, the init script will mount that location
